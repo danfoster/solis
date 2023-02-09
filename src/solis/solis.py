@@ -44,22 +44,52 @@ class Solis:
             print("Disabling charging from grid")
         self._modbus.write_holding_register(ENERGY_CONTROL_REG, value=value)
 
-    def stats(self):
-        discharing = self._modbus.read_input_register_formatted(33135, quantity=1)
+    @property
+    def charging(self):
+        """
+        Returns the charging state of the batteries
+          True: Battery is charing
+          False: Battery is discharing
+        """
+        discharging: bool = self._modbus.read_input_register_formatted(
+            33135, quantity=1
+        )
+        return not discharging
+
+    @property
+    def batt_charge_rate(self):
         batt = self._modbus.read_input_register_formatted(
             33149, quantity=2, signed=True
         )
-        if discharing:
-            print(f"Battery discharging: {batt} W")
-        else:
-            print(f"Battery charging: {batt} W")
+        if not self.charging:
+            batt = -batt
+        return batt
 
+    @property
+    def batt_charge_level(self):
         batt_charge_level = self._modbus.read_input_register_formatted(
             33139, quantity=1
         )
-        print(f"Battery Level: {batt_charge_level}%")
+        return batt_charge_level
 
-        control_reg = self._modbus.read_holding_register_formatted(
-            ENERGY_CONTROL_REG, quantity=1
+    @property
+    def invertor_total_power_generation(self):
+        batt = self._modbus.read_input_register_formatted(
+            33149, quantity=2, signed=True
         )
-        print(control_reg)
+        if not self.charging:
+            batt = -batt
+        return batt
+
+    @property
+    def serial(self):
+        # 160F52217230151
+        regs = self._modbus.read_input_registers(33004, 15)
+        data = []
+        for reg in regs:
+            val1 = reg & 0b11111111
+            val2 = reg >> 8
+            data.append(chr(val2))
+            data.append(chr(val1))
+
+        return "".join(data)

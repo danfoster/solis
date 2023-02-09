@@ -5,8 +5,8 @@ from .solis import Solis
 
 @click.group()
 @click.pass_context
-@click.option("--ip")
-@click.option("--serial", type=int)
+@click.option("--ip", required=True)
+@click.option("--serial", type=int, required=True)
 @click.option("--port", type=int, default=8899)
 def main(ctx, ip: str, serial: int, port: int):
     ctx.ensure_object(dict)
@@ -23,4 +23,13 @@ def charge(ctx, enable):
 @main.command()
 @click.pass_context
 def stats(ctx):
-    ctx.obj["solis"].stats()
+    solis = ctx.obj["solis"]
+    batt = solis.batt_charge_rate
+    
+    print(f"Serial: {solis.serial}")
+    if solis.charging:
+        print(f"Battery charging: {batt} W")
+    else:
+        print(f"Battery discharging: {batt} W")
+
+    print(f"Battery Level: {solis.batt_charge_level}%")
