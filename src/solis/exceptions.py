@@ -1,0 +1,2 @@
+class SerialInvalid(Exception):
+    pass

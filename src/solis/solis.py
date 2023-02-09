@@ -1,11 +1,16 @@
 import pysolarmanv5
+from . import exceptions
+import struct
 
 ENERGY_CONTROL_REG = 43110
 
 
 class Solis:
     def __init__(self, ip: str, serial: int, port: int = 8899):
-        self._modbus = pysolarmanv5.PySolarmanV5(ip, serial, port=port)
+        try:
+            self._modbus = pysolarmanv5.PySolarmanV5(ip, serial, port=port)
+        except struct.error:
+            raise exceptions.SerialInvalid("Invalid serial number provided")
 
     def charge(self, enable: bool):
         """
