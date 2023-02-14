@@ -11,6 +11,8 @@ class Solis:
             self._modbus = pysolarmanv5.PySolarmanV5(ip, serial, port=port)
         except struct.error:
             raise exceptions.SerialInvalid("Invalid serial number provided")
+        except pysolarmanv5.pysolarmanv5.NoSocketAvailableError:
+            raise exception.ConnectionError("Cannot Connect")
 
     def charge(self, enable: bool):
         """
