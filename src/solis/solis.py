@@ -7,6 +7,7 @@ ENERGY_CONTROL_REG = 43110
 
 class Solis:
     def __init__(self, ip: str, serial: int, port: int = 8899):
+        self.serial = serial
         try:
             self._modbus = pysolarmanv5.PySolarmanV5(ip, serial, port=port)
         except struct.error:
@@ -100,3 +101,8 @@ class Solis:
             data.append(chr(val1))
 
         return "".join(data)
+
+    @property
+    def sw_dsp_version(self):
+        regs = self._modbus.read_input_registers(33001, 1)
+        return regs[0]

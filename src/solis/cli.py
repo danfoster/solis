@@ -25,8 +25,9 @@ def charge(ctx, enable):
 def stats(ctx):
     solis = ctx.obj["solis"]
     batt = solis.batt_charge_rate
-    
+
     print(f"Serial: {solis.serial}")
+    print(f"DSP: {solis.sw_dsp_version}")
     if solis.charging:
         print(f"Battery charging: {batt} W")
     else:
