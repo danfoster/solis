@@ -24,6 +24,7 @@ def charge(ctx, enable):
 @click.pass_context
 def stats(ctx):
     solis = ctx.obj["solis"]
+    solis.update()
     batt = solis.batt_charge_rate
 
     print(f"Serial: {solis.serial}")
