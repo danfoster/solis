@@ -1,6 +1,10 @@
 import pysolarmanv5
 from . import exceptions
 import struct
+import logging
+import traceback
+from time import sleep
+import asyncio
 
 REG_ENERGY_CONTROL = 43110
 REG_CHARGING = 33135
@@ -8,6 +12,7 @@ REG_CHARGING = 33135
 REG_INFO_START = 33000
 REG_INFO_END = 33286
 
+logger = logging.getLogger(__name__)
 
 class SolisInfoRegs:
     def __init__(self, modbus):
@@ -20,19 +25,56 @@ class SolisInfoRegs:
     def reg_len(self):
         return self.reg_end - self.reg_start
 
-    def update(self):
-        self.regs = self.modbus.read_input_registers(self.reg_start, 100)
-        self.regs += self.modbus.read_input_registers(self.reg_start + 100, 100)
-        self.regs += self.modbus.read_input_registers(
+    async def get_regs(self):
+        regs = await self.modbus.read_input_registers(self.reg_start, 100)
+        regs += await self.modbus.read_input_registers(self.reg_start + 100, 100)
+        regs += await self.modbus.read_input_registers(
             self.reg_start + 200, self.reg_len - 200
         )
+        return regs
+
+    async def async_update(self):
+        COUNT = 10
+        logger.debug("Starting Update")
+        for i in range(1, COUNT+1):
+            await asyncio.sleep(i-1)
+            try:
+                self.regs = await self.get_regs()
+                logger.debug("Finishing Update")
+                return
+            except pysolarmanv5.pysolarmanv5_async.V5FrameError as err:
+                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.debug(traceback.format_exc())
+                continue
+            except struct.error as err:
+                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.debug(traceback.format_exc())
+                continue
+            except ConnectionResetError as err:
+                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.debug(traceback.format_exc())
+                continue
+            except TimeoutError as err:
+                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.debug(traceback.format_exc())
+                continue
+
+
+        raise exceptions.UpdateError("Failed to update")
+
 
     def get(self, addr, count):
         addr -= self.reg_start
         return self.regs[addr : addr + count]
 
+    def print_all(self):
+        for i in range(self.reg_start, self.reg_end):
+            v = self.get(i,1)[0]
+            print(f"{i}:\t{v}")
+
     def get_s32(self, addr):
         regs = self.get(addr, 2)
+        logger.info(regs)
         b = regs[0].to_bytes(2, "big") + regs[1].to_bytes(2, "big")
         result = int.from_bytes(b, "big", signed=True)
         return result
@@ -57,16 +99,21 @@ class Solis:
     def __init__(self, ip: str, serial: int, port: int = 8899):
         self._serial = serial
         try:
-            self._modbus = pysolarmanv5.PySolarmanV5(ip, serial, port=port)
+            self._modbus = pysolarmanv5.PySolarmanV5Async(ip, serial, port=port, auto_reconnect=True)
+
         except struct.error:
             raise exceptions.SerialInvalid("Invalid serial number provided")
         except pysolarmanv5.pysolarmanv5.NoSocketAvailableError:
             raise exceptions.ConnectionError("Cannot Connect")
 
+
         self.info_regs = SolisInfoRegs(self._modbus)
 
-    def update(self):
-        self.info_regs.update()
+    async def _init(self):
+        await self._modbus.connect()
+
+    async def async_update(self):
+        await self.info_regs.async_update()
 
     def charge(self, enable: bool):
         """
@@ -120,6 +167,7 @@ class Solis:
         batt = self.info_regs.get_s32(33149)
         if not self.charging:
             batt = -batt
+        logger.debug("Battery Change Rate: %s", batt)
         return batt
 
     @property
@@ -134,3 +182,11 @@ class Solis:
     @property
     def sw_dsp_version(self):
         return self.info_regs.get_u16(33001)
+
+    @property
+    def dc_voltage_1(self):
+        return self.info_regs.get_u16(33049) / 10
+
+    @property
+    def dc_voltage_2(self):
+        return self.info_regs.get_u16(33051) / 10

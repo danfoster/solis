@@ -4,3 +4,6 @@ class SerialInvalid(Exception):
 
 class ConnectionError(Exception):
     pass
+
+class UpdateError(Exception):
+    pass
