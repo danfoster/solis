@@ -1,10 +1,13 @@
-import pysolarmanv5
-from . import exceptions
+"""
+Module for managing Data from Solis Inverters
+"""
 import struct
 import logging
 import traceback
-from time import sleep
 import asyncio
+
+import pysolarmanv5
+from . import exceptions
 
 REG_ENERGY_CONTROL = 43110
 REG_CHARGING = 33135
@@ -15,6 +18,10 @@ REG_INFO_END = 33286
 logger = logging.getLogger(__name__)
 
 class SolisInfoRegs:
+    """
+    Manages access to Solis Information Registers
+    """
+
     def __init__(self, modbus):
         self.modbus = modbus
         self.reg_start = 33000
@@ -23,9 +30,16 @@ class SolisInfoRegs:
 
     @property
     def reg_len(self):
+        """
+        The Length of the registers block
+        """
         return self.reg_end - self.reg_start
 
     async def get_regs(self):
+        """
+        Get all info registers in as few modbus calls as possible
+        and store them for acccess later
+        """
         regs = await self.modbus.read_input_registers(self.reg_start, 100)
         regs += await self.modbus.read_input_registers(self.reg_start + 100, 100)
         regs += await self.modbus.read_input_registers(
@@ -34,28 +48,31 @@ class SolisInfoRegs:
         return regs
 
     async def async_update(self):
-        COUNT = 10
+        """
+        Updates all info registers, with a retry mechanism.
+        """
+        count = 10
         logger.debug("Starting Update")
-        for i in range(1, COUNT+1):
+        for i in range(1, count+1):
             await asyncio.sleep(i-1)
             try:
                 self.regs = await self.get_regs()
                 logger.debug("Finishing Update")
                 return
-            except pysolarmanv5.pysolarmanv5_async.V5FrameError as err:
-                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+            except pysolarmanv5.V5FrameError as err:
+                logger.info("[%s/%s] Error Updating: %s", i, count, err)
                 logger.debug(traceback.format_exc())
                 continue
             except struct.error as err:
-                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.info("[%s/%s] Error Updating: %s", i, count, err)
                 logger.debug(traceback.format_exc())
                 continue
             except ConnectionResetError as err:
-                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.info("[%s/%s] Error Updating: %s", i, count, err)
                 logger.debug(traceback.format_exc())
                 continue
             except TimeoutError as err:
-                logger.info("[%s/%s] Error Updating: %s", i, COUNT, err)
+                logger.info("[%s/%s] Error Updating: %s", i, count, err)
                 logger.debug(traceback.format_exc())
                 continue
 
@@ -64,25 +81,36 @@ class SolisInfoRegs:
 
 
     def get(self, addr, count):
+        """
+        Returns a number of info registers
+        """
         addr -= self.reg_start
         return self.regs[addr : addr + count]
 
-    def print_all(self):
-        for i in range(self.reg_start, self.reg_end):
-            v = self.get(i,1)[0]
-            print(f"{i}:\t{v}")
 
     def get_s32(self, addr):
+        """
+        Gets 2 registers (32 bits) at addr and returns it as
+        an signed integer
+        """
         regs = self.get(addr, 2)
         logger.info(regs)
-        b = regs[0].to_bytes(2, "big") + regs[1].to_bytes(2, "big")
-        result = int.from_bytes(b, "big", signed=True)
+        data = regs[0].to_bytes(2, "big") + regs[1].to_bytes(2, "big")
+        result = int.from_bytes(data, "big", signed=True)
         return result
 
     def get_u16(self, addr):
+        """
+        Get 1 register (16 bits) at addr and return it as
+        an unsigned integer
+        """
         return self.get(addr, 1)[0]
 
     def get_ascii(self, addr, count):
+        """
+        Gets n-registers and returns it as an ASCII string.
+        Where each 16 bit register represents 2 chars.
+        """
         # 160F52217230151
         regs = self.get(addr, count)
         data = []
@@ -96,21 +124,35 @@ class SolisInfoRegs:
 
 
 class Solis:
-    def __init__(self, ip: str, serial: int, port: int = 8899):
+    """
+    Main class for Managing the Solis Inverter
+    """
+    @classmethod
+    async def create(cls, ipaddr: str, serial: int, port: int = 8899):
+        """
+        Factory method for creating the object via a async
+        co-routine.
+        Use instead of the normal contructor.
+        """
+        self = cls(ipaddr, serial, port)
+        await self._modbus.connect()
+        return self
+
+
+    def __init__(self, ipaddr: str, serial: int, port: int = 8899):
         self._serial = serial
         try:
-            self._modbus = pysolarmanv5.PySolarmanV5Async(ip, serial, port=port, auto_reconnect=True)
+            self._modbus = pysolarmanv5.PySolarmanV5Async(
+                ipaddr, serial, port=port, auto_reconnect=True)
 
-        except struct.error:
-            raise exceptions.SerialInvalid("Invalid serial number provided")
-        except pysolarmanv5.pysolarmanv5.NoSocketAvailableError:
-            raise exceptions.ConnectionError("Cannot Connect")
+        except struct.error as err:
+            raise exceptions.SerialInvalid("Invalid serial number provided") from err
+        except pysolarmanv5.pysolarmanv5.NoSocketAvailableError as err:
+            raise exceptions.ConnectionError("Cannot Connect") from err
 
 
         self.info_regs = SolisInfoRegs(self._modbus)
 
-    async def _init(self):
-        await self._modbus.connect()
 
     async def async_update(self):
         await self.info_regs.async_update()
