@@ -9,7 +9,7 @@ packages = [{include = "solis", from="src"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pysolarmanv5 = "^2.4.0"
+pysolarmanv5 = {git = "https://github.com/jmccrohan/pysolarmanv5.git"}
 click = "^8.1.3"
 
 
