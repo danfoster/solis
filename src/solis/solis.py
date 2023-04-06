@@ -94,7 +94,6 @@ class SolisInfoRegs:
         an signed integer
         """
         regs = self.get(addr, 2)
-        logger.info(regs)
         data = regs[0].to_bytes(2, "big") + regs[1].to_bytes(2, "big")
         result = int.from_bytes(data, "big", signed=True)
         return result
@@ -209,7 +208,6 @@ class Solis:
         batt = self.info_regs.get_s32(33149)
         if not self.charging:
             batt = -batt
-        logger.debug("Battery Change Rate: %s", batt)
         return batt
 
     @property
