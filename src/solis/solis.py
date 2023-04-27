@@ -47,6 +47,7 @@ class SolisInfoRegs:
         )
         return regs
 
+
     async def async_update(self):
         """
         Updates all info registers, with a retry mechanism.
@@ -74,6 +75,11 @@ class SolisInfoRegs:
             except TimeoutError as err:
                 logger.info("[%s/%s] Error Updating: %s", i, count, err)
                 logger.debug(traceback.format_exc())
+                continue
+            except pysolarmanv5.NoSocketAvailableError as err:
+                logger.info("[%s/%s] Error Updating: %s", i, count, err)
+                logger.debug(traceback.format_exc())
+                await self.modbus.connect()
                 continue
 
 
@@ -215,6 +221,10 @@ class Solis:
         return self.info_regs.get_u16(33139)
 
     @property
+    def batt_health(self):
+        return self.info_regs.get_u16(33140)
+
+    @property
     def serial(self):
         # 160F52217230151
         return self.info_regs.get_ascii(33004, 15)
@@ -230,3 +240,48 @@ class Solis:
     @property
     def dc_voltage_2(self):
         return self.info_regs.get_u16(33051) / 10
+
+    @property
+    def temperture(self):
+        return self.info_regs.get_u16(33093) / 10
+
+    @property
+    def power_gen_today(self):
+        return self.info_regs.get_u16(33035) * 100
+
+    @property
+    def battery_charge_today(self):
+        return self.info_regs.get_u16(33163) * 100
+
+    @property
+    def battery_discharge_today(self):
+        return self.info_regs.get_u16(33167) * 100
+
+    @property
+    def house_load_today(self):
+        return self.info_regs.get_u16(33179) * 100
+
+    @property
+    def grid_imported_today(self):
+        return self.info_regs.get_u16(33171) * 100
+
+    @property
+    def grid_exported_today(self):
+        return self.info_regs.get_u16(33175) * 100
+
+    @property
+    def power_generation(self):
+        return self.info_regs.get_s32(33057) # ???
+
+
+    @property
+    def house_load(self):
+        return self.info_regs.get_u16(33147)
+
+    @property
+    def backup_load(self):
+        return self.info_regs.get_u16(33148)
+
+    @property
+    def grid_usage(self):
+        return self.info_regs.get_s32(33130)

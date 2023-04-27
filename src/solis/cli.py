@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 async def main(ctx, ip: str, serial: int, port: int):
     setup_logging(False)
     ctx.ensure_object(dict)
-    ctx.obj["solis"] = Solis(ip, serial, port)
-    await ctx.obj["solis"]._init()
+    ctx.obj["solis"] = await Solis.create(ip, serial, port)
 
 
 @main.command()
@@ -36,12 +35,28 @@ async def stats(ctx):
     await solis.async_update()
     batt = solis.batt_charge_rate
 
-    print(f"Serial: {solis.serial}")
-    print(f"DSP: {solis.sw_dsp_version}")
+    print(f"{'Serial:':>25} {solis.serial}")
+    print(f"{'DSP:':>25} {solis.sw_dsp_version}")
     if solis.charging:
-        print(f"Battery charging: {batt} W")
+        print(f"{'Battery charging:':>25} {batt}W")
     else:
-        print(f"Battery discharging: {batt} W")
+        print(f"{'Battery discharging:':>25} {batt}W")
 
-    print(f"Battery Level: {solis.batt_charge_level}%")
-    print(f"DC volage 1: {solis.dc_voltage_1}V")
+    print(f"{'Battery Level:':>25} {solis.batt_charge_level}%")
+    print(f"{'Battery Health:':>25} {solis.batt_health}%")
+    print(f"{'DC volage 1:':>25} {solis.dc_voltage_1}V")
+    print(f"{'DC volage 2:':>25} {solis.dc_voltage_2}V")
+    print(f"{'Temperture:':>25} {solis.temperture}°C")
+    print("-------")
+    print(f"{'Power Generation Today:':>25} {solis.power_gen_today}Wh")
+    print(f"{'Battery Charge Today:':>25} {solis.battery_charge_today}Wh")
+    print(f"{'Battery Discharge Today:':>25} {solis.battery_discharge_today}Wh")
+    print(f"{'House Load Today:':>25} {solis.house_load_today}Wh")
+    print(f"{'Grid Imported Today:':>25} {solis.grid_imported_today}Wh")
+    print(f"{'Grid Exported Today:':>25} {solis.grid_exported_today}Wh")
+    print("------")
+    print(f"{'Power Generation:':>25} {solis.power_generation}Wh")
+    print(f"{'House Load:':>25} {solis.house_load}Wh")
+    print(f"{'Backup Load:':>25} {solis.backup_load}Wh")
+    print(f"{'Grid Usage:':>25} {solis.grid_usage}Wh")
+
