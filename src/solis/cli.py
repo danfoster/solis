@@ -33,14 +33,9 @@ async def charge(ctx, enable):
 async def stats(ctx):
     solis = ctx.obj["solis"]
     await solis.async_update()
-    batt = solis.batt_charge_rate
 
     print(f"{'Serial:':>25} {solis.serial}")
     print(f"{'DSP:':>25} {solis.sw_dsp_version}")
-    if solis.charging:
-        print(f"{'Battery charging:':>25} {batt}W")
-    else:
-        print(f"{'Battery discharging:':>25} {batt}W")
 
     print(f"{'Battery Level:':>25} {solis.batt_charge_level}%")
     print(f"{'Battery Health:':>25} {solis.batt_health}%")
@@ -55,8 +50,9 @@ async def stats(ctx):
     print(f"{'Grid Imported Today:':>25} {solis.grid_imported_today}Wh")
     print(f"{'Grid Exported Today:':>25} {solis.grid_exported_today}Wh")
     print("------")
-    print(f"{'Power Generation:':>25} {solis.power_generation}Wh")
-    print(f"{'House Load:':>25} {solis.house_load}Wh")
-    print(f"{'Backup Load:':>25} {solis.backup_load}Wh")
-    print(f"{'Grid Usage:':>25} {solis.grid_usage}Wh")
+    print(f"{'Power Generation:':>25} {solis.power_generation}W")
+    print(f"{'House Load:':>25} {solis.house_load}W")
+    print(f"{'Backup Load:':>25} {solis.backup_load}W")
+    print(f"{'Grid Usage:':>25} {solis.grid_usage}W")
+    print(f"{'Battery charging:':>25} {solis.batt_charge_rate}W")
 

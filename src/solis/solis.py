@@ -211,6 +211,9 @@ class Solis:
 
     @property
     def batt_charge_rate(self):
+        """
+        Battery Charge(+)/Discharge(-) rate (W)
+        """
         batt = self.info_regs.get_s32(33149)
         if not self.charging:
             batt = -batt
@@ -218,6 +221,9 @@ class Solis:
 
     @property
     def batt_charge_level(self):
+        """
+        Battery Charge Level (%)
+        """
         return self.info_regs.get_u16(33139)
 
     @property
@@ -226,11 +232,16 @@ class Solis:
 
     @property
     def serial(self):
-        # 160F52217230151
+        """
+        Serial Number
+        """
         return self.info_regs.get_ascii(33004, 15)
 
     @property
     def sw_dsp_version(self):
+        """
+        DSP Software Version
+        """
         return self.info_regs.get_u16(33001)
 
     @property
@@ -243,45 +254,78 @@ class Solis:
 
     @property
     def temperture(self):
+        """
+        Temperture of the Inverter (degress C)
+        """
         return self.info_regs.get_u16(33093) / 10
 
     @property
     def power_gen_today(self):
+        """
+        Power Generation Today (Wh)
+        """
         return self.info_regs.get_u16(33035) * 100
 
     @property
     def battery_charge_today(self):
+        """
+        Battery chanrge today (Wh)
+        """
         return self.info_regs.get_u16(33163) * 100
 
     @property
     def battery_discharge_today(self):
+        """
+        Battery discharge today (Wh)
+        """
         return self.info_regs.get_u16(33167) * 100
 
     @property
     def house_load_today(self):
+        """
+        Load today (Wh)
+        """
         return self.info_regs.get_u16(33179) * 100
 
     @property
     def grid_imported_today(self):
+        """
+        Power imported today (Wh)
+        """
         return self.info_regs.get_u16(33171) * 100
 
     @property
     def grid_exported_today(self):
+        """
+        Power exported today (Wh)
+        """
         return self.info_regs.get_u16(33175) * 100
 
     @property
     def power_generation(self):
-        return self.info_regs.get_s32(33057) # ???
+        """
+        Generation (W)
+        """
+        return self.info_regs.get_s32(33057)
 
 
     @property
     def house_load(self):
+        """
+        Load from the House (W)
+        """
         return self.info_regs.get_u16(33147)
 
     @property
     def backup_load(self):
+        """
+        Load on the Emergancy supply (W)
+        """
         return self.info_regs.get_u16(33148)
 
     @property
     def grid_usage(self):
+        """
+        Usage from the grid / export (W)
+        """
         return self.info_regs.get_s32(33130)
