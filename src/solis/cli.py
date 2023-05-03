@@ -25,7 +25,8 @@ async def main(ctx, ip: str, serial: int, port: int):
 @click.pass_context
 @click.option("--enable/--disable", default=True)
 async def charge(ctx, enable):
-    await ctx.obj["solis"].charge(enable)
+    solis = ctx.obj["solis"]
+    await solis.charge(enable)
 
 
 @main.command()
@@ -55,4 +56,3 @@ async def stats(ctx):
     print(f"{'Backup Load:':>25} {solis.backup_load}W")
     print(f"{'Grid Usage:':>25} {solis.grid_usage}W")
     print(f"{'Battery charging:':>25} {solis.batt_charge_rate}W")
-

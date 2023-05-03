@@ -17,6 +17,7 @@ REG_INFO_END = 33286
 
 logger = logging.getLogger(__name__)
 
+
 class SolisInfoRegs:
     """
     Manages access to Solis Information Registers
@@ -47,15 +48,14 @@ class SolisInfoRegs:
         )
         return regs
 
-
     async def async_update(self):
         """
         Updates all info registers, with a retry mechanism.
         """
         count = 10
         logger.debug("Starting Update")
-        for i in range(1, count+1):
-            await asyncio.sleep(i-1)
+        for i in range(1, count + 1):
+            await asyncio.sleep(i - 1)
             try:
                 self.regs = await self.get_regs()
                 logger.debug("Finishing Update")
@@ -82,9 +82,7 @@ class SolisInfoRegs:
                 await self.modbus.connect()
                 continue
 
-
         raise exceptions.UpdateError("Failed to update")
-
 
     def get(self, addr, count):
         """
@@ -92,7 +90,6 @@ class SolisInfoRegs:
         """
         addr -= self.reg_start
         return self.regs[addr : addr + count]
-
 
     def get_s32(self, addr):
         """
@@ -132,6 +129,7 @@ class Solis:
     """
     Main class for Managing the Solis Inverter
     """
+
     @classmethod
     async def create(cls, ipaddr: str, serial: int, port: int = 8899):
         """
@@ -143,26 +141,24 @@ class Solis:
         await self._modbus.connect()
         return self
 
-
     def __init__(self, ipaddr: str, serial: int, port: int = 8899):
         self._serial = serial
         try:
             self._modbus = pysolarmanv5.PySolarmanV5Async(
-                ipaddr, serial, port=port, auto_reconnect=True)
+                ipaddr, serial, port=port, auto_reconnect=True
+            )
 
         except struct.error as err:
             raise exceptions.SerialInvalid("Invalid serial number provided") from err
         except pysolarmanv5.pysolarmanv5.NoSocketAvailableError as err:
             raise exceptions.ConnectionError("Cannot Connect") from err
 
-
         self.info_regs = SolisInfoRegs(self._modbus)
-
 
     async def async_update(self):
         await self.info_regs.async_update()
 
-    def charge(self, enable: bool):
+    async def charge(self, enable: bool):
         """
         Sets the inverter to charge from the grid
         """
@@ -197,7 +193,7 @@ class Solis:
             value = value | 0b100010
         else:
             print("Disabling charging from grid")
-        self._modbus.write_holding_register(REG_ENERGY_CONTROL, value=value)
+        await self._modbus.write_holding_register(REG_ENERGY_CONTROL, value=value)
 
     @property
     def charging(self):
@@ -307,7 +303,6 @@ class Solis:
         Generation (W)
         """
         return self.info_regs.get_s32(33057)
-
 
     @property
     def house_load(self):
