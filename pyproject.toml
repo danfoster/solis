@@ -9,9 +9,9 @@ packages = [{include = "solis", from="src"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pysolarmanv5 = {git = "https://github.com/jmccrohan/pysolarmanv5.git"}
 click = "^8.1.3"
 asyncclick = "^8.1.3.4"
+pysolarmanv5 = {url = "https://github.com/danfoster/pysolarmanv5/releases/download/v2.5.0-rc1/pysolarmanv5-2.5.0rc1+zem-py3-none-any.whl"}
 
 
 [tool.poetry.group.dev.dependencies]
