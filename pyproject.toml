@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "solis"
-version = "0.1.0"
+version = "0.1.1"
 description = "A tool to control Solis Hybrid Inverters"
 authors = ["Dan Foster <dan@zem.org.uk>"]
 license = "MIT"
@@ -11,7 +11,7 @@ packages = [{include = "solis", from="src"}]
 python = "^3.8"
 click = "^8.1.3"
 asyncclick = "^8.1.3.4"
-zem-pysolarmanv5 = "^2.5.0rc1"
+zem-pysolarmanv5 = "^2.5.0rc2"
 
 
 [tool.poetry.group.dev.dependencies]
